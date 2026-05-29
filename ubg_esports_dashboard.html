@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UBG Esports Strategy Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #080A12;
+      --card: rgba(255,255,255,0.075);
+      --card-border: rgba(255,255,255,0.12);
+      --muted: #A6ADBB;
+      --accent: #F97316;
+      --accent-2: #EF4444;
+      --accent-3: #22C55E;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(249,115,22,0.22), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(239,68,68,0.18), transparent 35%),
+        var(--bg);
+      color: #F8FAFC;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .glass {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.28);
+    }
+
+    .pill {
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+    }
+
+    .active-tab,
+    .active-view-tab {
+      background: linear-gradient(135deg, #F97316, #EF4444);
+      color: white;
+      border-color: transparent;
+    }
+
+    .bar-bg { background: rgba(255,255,255,.10); }
+    .bar-fill { background: linear-gradient(90deg, #F97316, #EF4444); }
+    .fade-in { animation: fadeIn .35s ease both; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <main class="max-w-7xl mx-auto px-5 py-8 lg:py-10">
+    <section class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
+      <div>
+        <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-sm text-orange-100 mb-4">
+          <span class="h-2 w-2 rounded-full bg-orange-400"></span>
+          Roblox Esports Opportunity Dashboard
+        </div>
+        <h1 class="text-4xl lg:text-6xl font-black tracking-tight leading-tight">
+          Untitled Boxing Game<br class="hidden md:block" /> Competitive Ecosystem
+        </h1>
+        <p class="text-slate-300 mt-4 max-w-3xl text-lg">
+          A strategic snapshot to evaluate UBG's current community scale, competitive readiness, Roblox competitors, game design, and the path toward official fight nights, rankings, and a yearly belt competition.
+        </p>
+      </div>
+
+      <div class="glass rounded-3xl p-5 min-w-[260px]">
+        <p class="text-slate-400 text-sm">Strategic Positioning</p>
+        <p class="text-2xl font-bold mt-1">Community-first esport</p>
+        <p class="text-slate-300 text-sm mt-2">Start with official competitive events before over-positioning as a full professional esport.</p>
+      </div>
+    </section>
+
+    <section class="glass rounded-3xl p-2 mb-8 flex flex-wrap gap-2 w-fit">
+      <button class="view-tab active-view-tab rounded-2xl px-5 py-3 text-sm font-bold" data-view="overviewView">Overview Dashboard</button>
+      <button class="view-tab pill rounded-2xl px-5 py-3 text-sm font-bold" data-view="researchView">Game Research & Competitive Context</button>
+      <button class="view-tab pill rounded-2xl px-5 py-3 text-sm font-bold" data-view="ecosystemView">Fighting Game Esports Ecosystem</button>
+    </section>
+
+    <div id="overviewView" class="view-panel fade-in">
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="kpiCards"></section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+        <div class="glass rounded-3xl p-5 lg:col-span-2">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+            <div>
+              <h2 class="text-2xl font-bold">CCU & Activity Read</h2>
+              <p class="text-slate-400 text-sm mt-1">Publicly visible indicators. Use as directional, not official analytics.</p>
+            </div>
+            <select id="ccuMode" class="bg-slate-950/70 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none">
+              <option value="public">Public tracked markers</option>
+              <option value="strategy">Strategic operating range</option>
+            </select>
+          </div>
+          <canvas id="ccuChart" height="120"></canvas>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h2 class="text-2xl font-bold mb-4">Esports Readiness</h2>
+          <div id="readinessBars" class="space-y-4"></div>
+          <div class="mt-6 p-4 rounded-2xl bg-orange-500/10 border border-orange-400/20">
+            <p class="text-orange-200 font-semibold">Core recommendation</p>
+            <p class="text-slate-300 text-sm mt-1">Build the ladder from weekly Fight Nights to seasonal regional championships before launching a major UFC-style yearly belt.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-5 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-2xl font-bold">Roblox Competitive Landscape</h2>
+            <p class="text-slate-400 text-sm mt-1">Filter between direct boxing competitors and broader combat-attention competitors. CCU is based on public tracker proxies, not official internal averages.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="tab active-tab rounded-full px-4 py-2 text-sm font-semibold" data-filter="all">All</button>
+            <button class="tab pill rounded-full px-4 py-2 text-sm font-semibold" data-filter="boxing">Boxing</button>
+            <button class="tab pill rounded-full px-4 py-2 text-sm font-semibold" data-filter="combat">Combat Attention</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[1100px]">
+            <thead class="text-slate-400 text-xs uppercase tracking-wider border-b border-white/10">
+              <tr>
+                <th class="py-3 pr-4">Game / Category</th>
+                <th class="py-3 pr-4">Type</th>
+                <th class="py-3 pr-4">Visits / Scale</th>
+                <th class="py-3 pr-4">Public CCU Read</th>
+                <th class="py-3 pr-4">Discord / X</th>
+                <th class="py-3 pr-4">Threat</th>
+                <th class="py-3 pr-4">Strategic Note</th>
+              </tr>
+            </thead>
+            <tbody id="competitorTable" class="divide-y divide-white/10"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <div class="glass rounded-3xl p-5">
+          <h2 class="text-2xl font-bold mb-1">Community & Channel Size</h2>
+          <p class="text-slate-400 text-sm mb-4">Core owned and community channels relevant for UBG competitive growth.</p>
+          <div id="socialGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h2 class="text-2xl font-bold mb-4">From Community Events to Belt Competition</h2>
+          <div class="space-y-3" id="roadmap"></div>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-5">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+          <div class="max-w-2xl">
+            <h2 class="text-2xl font-bold">Strategy Notes</h2>
+            <p class="text-slate-300 mt-2">
+              The best path is not to launch a polished professional league immediately. UBG should first formalize what the community already does: ranked fights, creators, rivalries, Discord events, and style-based meta debates.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:max-w-xl">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="text-slate-400 text-sm">Phase 1</p>
+              <p class="font-bold mt-1">Weekly Fight Nights</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="text-slate-400 text-sm">Phase 2</p>
+              <p class="font-bold mt-1">Monthly Cups</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="text-slate-400 text-sm">Phase 3</p>
+              <p class="font-bold mt-1">Seasonal Belt</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="researchView" class="view-panel hidden fade-in">
+      <section class="glass rounded-3xl p-6 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+          <div>
+            <p class="text-orange-200 font-bold text-sm uppercase tracking-wider mb-2">Game Research</p>
+            <h2 class="text-3xl lg:text-4xl font-black">How UBG works as a competitive game</h2>
+            <p class="text-slate-300 mt-3 max-w-4xl text-lg">
+              UBG is a fast 1v1 Roblox boxing fighting game built around timing, dodging, stamina control, fighting-style mastery, and ranked progression. For esports, the key is that it already behaves like a combat-sports ecosystem: two fighters, visible skill, ranks, titles, styles, and champion fantasy.
+            </p>
+          </div>
+          <div class="rounded-3xl bg-orange-500/10 border border-orange-400/20 p-5 min-w-[260px]">
+            <p class="text-orange-200 font-semibold">Strategic framing</p>
+            <p class="text-white text-xl font-black mt-1">Roblox fighting game × combat sports entertainment</p>
+            <p class="text-slate-300 text-sm mt-2">Do not position it only as a boxing sim. Position it as an official fight ecosystem.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+        <div class="glass rounded-3xl p-5 lg:col-span-2">
+          <h3 class="text-2xl font-bold mb-4">Core Loop</h3>
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-orange-200 font-bold">1. Fight</p><p class="text-slate-300 text-sm mt-2">Enter 1v1 matches and test timing, spacing, stamina, block, dodge, and counters.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-orange-200 font-bold">2. Earn</p><p class="text-slate-300 text-sm mt-2">Collect cash, spins, gloves, titles, and other status rewards.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-orange-200 font-bold">3. Improve</p><p class="text-slate-300 text-sm mt-2">Learn style matchups, feints, perfect dodges, ult timing, and stamina windows.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-orange-200 font-bold">4. Climb</p><p class="text-slate-300 text-sm mt-2">Use ranked rating and titles to move toward champion status.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-orange-200 font-bold">5. Repeat</p><p class="text-slate-300 text-sm mt-2">Return for new styles, balance changes, rivals, creator events, and ranking goals.</p></div>
+          </div>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Why this matters</h3>
+          <div class="space-y-3">
+            <p class="rounded-2xl bg-white/5 border border-white/10 p-4 text-slate-300"><span class="text-white font-bold">Simple to watch:</span> two fighters, health, stamina, knockdowns, and ultimates.</p>
+            <p class="rounded-2xl bg-white/5 border border-white/10 p-4 text-slate-300"><span class="text-white font-bold">Hard to master:</span> timing, reads, perfect dodges, counters, and style matchups.</p>
+            <p class="rounded-2xl bg-white/5 border border-white/10 p-4 text-slate-300"><span class="text-white font-bold">Easy to package:</span> fight cards, belts, divisions, contender series, and regional rivalries.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-5 mb-8">
+        <h3 class="text-2xl font-bold mb-1">Main Variation Systems</h3>
+        <p class="text-slate-400 text-sm mb-5">The game has multiple variation layers that create long-term meta, content, and competitive identity.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <p class="font-bold text-xl">Fighting Styles</p>
+            <p class="text-3xl font-black mt-3">28</p>
+            <p class="text-slate-400 text-sm mt-2">Styles change damage, dodge speed, block, regeneration, ultimates, and matchup identity.</p>
+          </div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <p class="font-bold text-xl">Style Rarities</p>
+            <p class="text-3xl font-black mt-3">5</p>
+            <p class="text-slate-400 text-sm mt-2">Uncommon, Rare, Mythic, Legendary, and Shiny. This fuels collection, status, and meta debates.</p>
+          </div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <p class="font-bold text-xl">Ranked Identity</p>
+            <p class="text-3xl font-black mt-3">Champion</p>
+            <p class="text-slate-400 text-sm mt-2">Ranking language already maps to boxing belts: World Champion, Unified Champion, Undisputed Champion.</p>
+          </div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <p class="font-bold text-xl">Cosmetics</p>
+            <p class="text-3xl font-black mt-3">Gloves+</p>
+            <p class="text-slate-400 text-sm mt-2">Gloves, titles, emotes, knockdowns, and entrances can become broadcast and player-identity tools.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Combat System</h3>
+          <div class="space-y-3" id="combatSystems"></div>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Casual vs Ranked</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[620px]">
+              <thead class="text-slate-400 text-xs uppercase tracking-wider border-b border-white/10">
+                <tr><th class="py-3 pr-4">Dimension</th><th class="py-3 pr-4">Casual</th><th class="py-3 pr-4">Ranked</th></tr>
+              </thead>
+              <tbody id="rankedTable" class="divide-y divide-white/10"></tbody>
+            </table>
+          </div>
+          <div class="mt-5 p-4 rounded-2xl bg-green-500/10 border border-green-400/20">
+            <p class="text-green-200 font-semibold">Esports implication</p>
+            <p class="text-slate-300 text-sm mt-1">Ranked should become the qualification backbone, while casual/community events should be used as the audience and creator funnel.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-5 mb-8">
+        <h3 class="text-2xl font-bold mb-1">Key Differences vs Direct Competitors</h3>
+        <p class="text-slate-400 text-sm mb-5">The strongest strategic distinction is that UBG is more style-driven and broadcastable, while its competitors lean more toward gym simulation or legacy progression.</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[920px]">
+            <thead class="text-slate-400 text-xs uppercase tracking-wider border-b border-white/10">
+              <tr>
+                <th class="py-3 pr-4">Dimension</th>
+                <th class="py-3 pr-4">UBG</th>
+                <th class="py-3 pr-4">Boxing Beta!</th>
+                <th class="py-3 pr-4">Boxing League</th>
+              </tr>
+            </thead>
+            <tbody id="comparisonTable" class="divide-y divide-white/10"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">What makes UBG esports-friendly</h3>
+          <div id="esportsFriendly" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Main competitive risks</h3>
+          <div id="riskCards" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-6">
+        <p class="text-orange-200 font-bold text-sm uppercase tracking-wider mb-2">Recommended positioning</p>
+        <h3 class="text-3xl font-black max-w-5xl">UBG is not just a Roblox boxing game. It is a combat-sports ecosystem with ranked fighters, style identities, regional rivalries, and a natural path toward official belts.</h3>
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mt-6">
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-slate-400 text-sm">Step 1</p><p class="font-bold mt-1">Casual Fight Nights</p></div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-slate-400 text-sm">Step 2</p><p class="font-bold mt-1">Ranked Cups</p></div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-slate-400 text-sm">Step 3</p><p class="font-bold mt-1">Regional Ladders</p></div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-slate-400 text-sm">Step 4</p><p class="font-bold mt-1">Contender Series</p></div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-slate-400 text-sm">Step 5</p><p class="font-bold mt-1">Seasonal Title Fights</p></div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="text-slate-400 text-sm">Step 6</p><p class="font-bold mt-1">Yearly Belt Event</p></div>
+        </div>
+      </section>
+    </div>
+
+    <div id="ecosystemView" class="view-panel hidden fade-in">
+      <section class="glass rounded-3xl p-6 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+          <div>
+            <p class="text-orange-200 font-bold text-sm uppercase tracking-wider mb-2">Fighting Game Esports Research</p>
+            <h2 class="text-3xl lg:text-4xl font-black">Why publishers invest in fighting game esports</h2>
+            <p class="text-slate-300 mt-3 max-w-4xl text-lg">
+              Fighting game esports is not always the biggest ecosystem by weekly viewership, but it is one of gaming's most durable competitive cultures. Publishers invest because it extends premium game lifecycle, supports DLC and seasonal content, builds competitive legitimacy, activates creators, and turns player rivalries into long-term community storylines.
+            </p>
+          </div>
+          <div class="rounded-3xl bg-orange-500/10 border border-orange-400/20 p-5 min-w-[280px]">
+            <p class="text-orange-200 font-semibold">Core lesson for UBG</p>
+            <p class="text-white text-xl font-black mt-1">Community-first, not league-first</p>
+            <p class="text-slate-300 text-sm mt-2">Start with open fight nights and regional rankings before building a formal yearly belt ecosystem.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="glass rounded-3xl p-5">
+          <p class="text-slate-400 text-sm">Fighting Games Market</p>
+          <p class="text-3xl font-black mt-2">$12.4B</p>
+          <p class="text-slate-300 text-sm mt-2">Estimated global fighting games market in 2025.</p>
+        </div>
+        <div class="glass rounded-3xl p-5">
+          <p class="text-slate-400 text-sm">Evo 2025 Competitors</p>
+          <p class="text-3xl font-black mt-2">8,541</p>
+          <p class="text-slate-300 text-sm mt-2">Registered competitors across the main fighting game lineup.</p>
+        </div>
+        <div class="glass rounded-3xl p-5">
+          <p class="text-slate-400 text-sm">Evo 2024 Watch Time</p>
+          <p class="text-3xl font-black mt-2">6.88M hrs</p>
+          <p class="text-slate-300 text-sm mt-2">Total hours watched across the eight main tournaments.</p>
+        </div>
+        <div class="glass rounded-3xl p-5">
+          <p class="text-slate-400 text-sm">Capcom Pro Tour 2026</p>
+          <p class="text-3xl font-black mt-2">$2.1M+</p>
+          <p class="text-slate-300 text-sm mt-2">Published total prize pool across the official Street Fighter circuit.</p>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-5 mb-8">
+        <h3 class="text-2xl font-bold mb-1">Ecosystem scale & benchmark numbers</h3>
+        <p class="text-slate-400 text-sm mb-5">Fighting games are event-spike ecosystems: smaller than top FPS/MOBA titles week-to-week, but highly valuable during finals, announcements, and regional storylines.</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[980px]">
+            <thead class="text-slate-400 text-xs uppercase tracking-wider border-b border-white/10">
+              <tr>
+                <th class="py-3 pr-4">Benchmark</th>
+                <th class="py-3 pr-4">Number</th>
+                <th class="py-3 pr-4">Strategic meaning</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10">
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Evo 2025 total competitors</td><td class="py-4 pr-4 text-slate-300">8,541</td><td class="py-4 pr-4 text-slate-300">Shows the FGC is still driven by open-bracket participation, not only pro teams.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Evo 2025 Street Fighter 6 entrants</td><td class="py-4 pr-4 text-slate-300">4,228</td><td class="py-4 pr-4 text-slate-300">Street Fighter remains the flagship fighting game esport and the best reference for UBG's long-term circuit design.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Evo 2025 Tekken 8 entrants</td><td class="py-4 pr-4 text-slate-300">2,521</td><td class="py-4 pr-4 text-slate-300">Tekken is the strongest reference for global ranking points, regional qualifiers, and world finals.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Street Fighter 6 Evo 2023 peak</td><td class="py-4 pr-4 text-slate-300">442K peak viewers</td><td class="py-4 pr-4 text-slate-300">Fighting games can generate major finals moments when the stakes and storylines are clear.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Capcom Cup 11</td><td class="py-4 pr-4 text-slate-300">354K peak viewers / 5.57M hours watched</td><td class="py-4 pr-4 text-slate-300">World finals can be used as both competition and major seasonal marketing moments.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Tekken World Tour Finals 2025</td><td class="py-4 pr-4 text-slate-300">79K peak viewers / 1.34M hours watched</td><td class="py-4 pr-4 text-slate-300">Even smaller circuits create strong value through regional identity and player narratives.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Street Fighter 6 sales</td><td class="py-4 pr-4 text-slate-300">5M+ units</td><td class="py-4 pr-4 text-slate-300">Esports supports premium game longevity and keeps the title culturally relevant after launch.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Tekken 8 launch sales</td><td class="py-4 pr-4 text-slate-300">2M+ in first month</td><td class="py-4 pr-4 text-slate-300">Competitive hype supports launch momentum, DLC interest, and long-term franchise strength.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Main events & circuits</h3>
+          <div class="space-y-3">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Evo Championship Series</p><p class="text-slate-400 text-sm mt-1">The cultural center of the FGC: open brackets, multi-title finals, publisher announcements, demos, panels, creators, and fan convention energy.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Capcom Pro Tour / Capcom Cup</p><p class="text-slate-400 text-sm mt-1">Official Street Fighter global circuit with regional paths, World Warrior events, Street Fighter League, and a world championship.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Tekken World Tour</p><p class="text-slate-400 text-sm mt-1">Strong reference for global points, Master events, Challenger events, community organizer tools, and world finals.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Mortal Kombat Pro Kompetition / Final Kombat</p><p class="text-slate-400 text-sm mt-1">Publisher-backed qualification route into a final championship, with regional stops and global leaderboard points.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Arc World Tour</p><p class="text-slate-400 text-sm mt-1">Developer-led circuit for anime fighters such as Guilty Gear and Granblue, useful for character/style specialist storytelling.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">SNK World Championship & Esports World Cup</p><p class="text-slate-400 text-sm mt-1">Examples of major prize-pool signaling, IP revival, and integration into broader multi-title esports portfolios.</p></div>
+          </div>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Why publishers invest</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Lifecycle extension</p><p class="text-slate-400 text-sm mt-1">Keeps premium games relevant between launch, DLC, and balance patches.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">DLC & season pass demand</p><p class="text-slate-400 text-sm mt-1">Characters, costumes, stages, and patches become competitive moments.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Competitive credibility</p><p class="text-slate-400 text-sm mt-1">Esports proves the game is fair, deep, and worth mastering.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Grassroots conversion</p><p class="text-slate-400 text-sm mt-1">Community locals and Discord events become official ranking pathways.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Regional heroes</p><p class="text-slate-400 text-sm mt-1">1v1 competition creates clear rivalries, national pride, and underdog stories.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Announcement stage</p><p class="text-slate-400 text-sm mt-1">Finals become the best place to reveal characters, patches, and future content.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-5 mb-8">
+        <h3 class="text-2xl font-bold mb-1">Fighting games vs traditional team esports</h3>
+        <p class="text-slate-400 text-sm mb-5">UBG should learn from fighting games because they are closer to combat sports than to Valorant, League of Legends, or Counter-Strike.</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left min-w-[900px]">
+            <thead class="text-slate-400 text-xs uppercase tracking-wider border-b border-white/10">
+              <tr><th class="py-3 pr-4">Dimension</th><th class="py-3 pr-4">Fighting Games</th><th class="py-3 pr-4">MOBAs / FPS</th><th class="py-3 pr-4">UBG implication</th></tr>
+            </thead>
+            <tbody class="divide-y divide-white/10">
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Format</td><td class="py-4 pr-4 text-slate-300">Mostly 1v1</td><td class="py-4 pr-4 text-slate-300">Team-based</td><td class="py-4 pr-4 text-slate-300">Use belts, title fights, contender matches, and direct rivalries.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Community</td><td class="py-4 pr-4 text-slate-300">Grassroots locals and open brackets</td><td class="py-4 pr-4 text-slate-300">Pro teams, leagues, orgs</td><td class="py-4 pr-4 text-slate-300">Start open and community-led before formalizing.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Storytelling</td><td class="py-4 pr-4 text-slate-300">Player rivalries and character specialists</td><td class="py-4 pr-4 text-slate-300">Team brands and tactics</td><td class="py-4 pr-4 text-slate-300">Build around fighters, styles, records, regions, and title defenses.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Monetization</td><td class="py-4 pr-4 text-slate-300">Game sales, DLC, cosmetics, season passes</td><td class="py-4 pr-4 text-slate-300">Skins, battle passes, sponsorships</td><td class="py-4 pr-4 text-slate-300">Tie events to gloves, entrances, titles, codes, and style reveals.</td></tr>
+              <tr class="hover:bg-white/5 transition"><td class="py-4 pr-4 font-bold">Event feel</td><td class="py-4 pr-4 text-slate-300">Martial arts, combat sports, convention</td><td class="py-4 pr-4 text-slate-300">Arena sports / league sports</td><td class="py-4 pr-4 text-slate-300">Make UBG feel like Roblox UFC + Evo, not a generic esports league.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Strategic insights for UBG</h3>
+          <div class="space-y-3">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Do not start with a closed pro league</p><p class="text-slate-400 text-sm mt-1">Open brackets create underdog stories and legitimacy. Closed leagues should come much later, if ever.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Build a ranked-to-event bridge</p><p class="text-slate-400 text-sm mt-1">Use ranked as an always-on skill signal, then validate players through cups, regionals, and finals.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Use belts, not generic trophies</p><p class="text-slate-400 text-sm mt-1">UBG has boxing DNA. Champion belts, interim belts, title defenses, and contender series fit better than standard medals.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Make balance trust part of the product</p><p class="text-slate-400 text-sm mt-1">Use patch locks, legal style lists, exploit policies, and no major balance updates right before finals.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Use esports as Live Ops</p><p class="text-slate-400 text-sm mt-1">Every event should create in-game rewards, codes, cosmetics, limited titles, and reasons to return.</p></div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4"><p class="font-bold">Treat creators like fight promoters</p><p class="text-slate-400 text-sm mt-1">Creators should host sanctioned fight nights, co-stream events, run gyms, and educate the player base.</p></div>
+          </div>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h3 class="text-2xl font-bold mb-4">Benchmark structure for UBG</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[620px]">
+              <thead class="text-slate-400 text-xs uppercase tracking-wider border-b border-white/10">
+                <tr><th class="py-3 pr-4">Benchmark</th><th class="py-3 pr-4">What to borrow</th></tr>
+              </thead>
+              <tbody class="divide-y divide-white/10">
+                <tr><td class="py-4 pr-4 font-bold">Evo</td><td class="py-4 pr-4 text-slate-300">Open bracket culture, festival format, creator/showmatch energy.</td></tr>
+                <tr><td class="py-4 pr-4 font-bold">Capcom Pro Tour</td><td class="py-4 pr-4 text-slate-300">Official circuit, regional qualification, world championship prestige.</td></tr>
+                <tr><td class="py-4 pr-4 font-bold">Tekken World Tour</td><td class="py-4 pr-4 text-slate-300">Community tournament points and organizer portal logic.</td></tr>
+                <tr><td class="py-4 pr-4 font-bold">Mortal Kombat Pro Kompetition</td><td class="py-4 pr-4 text-slate-300">Regional stops and Final Kombat-style championship branding.</td></tr>
+                <tr><td class="py-4 pr-4 font-bold">Arc World Tour</td><td class="py-4 pr-4 text-slate-300">Anime-style character/style specialist storytelling.</td></tr>
+                <tr><td class="py-4 pr-4 font-bold">UFC / Boxing</td><td class="py-4 pr-4 text-slate-300">Belts, title defenses, rankings, weigh-ins, fight cards, and contender series.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-3xl p-6">
+        <p class="text-orange-200 font-bold text-sm uppercase tracking-wider mb-2">Recommended UBG direction</p>
+        <h3 class="text-3xl font-black max-w-5xl">The first Roblox combat-sports circuit built from the community up: open fights, regional rankings, creator-led fight nights, and official belts.</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5"><p class="text-slate-400 text-sm">Year 1</p><p class="font-bold text-xl mt-1">Community infrastructure</p><p class="text-slate-400 text-sm mt-2">Ruleset, Discord tournament hub, creator fight nights, monthly cups, regional leaderboards, first seasonal final.</p></div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5"><p class="text-slate-400 text-sm">Year 2</p><p class="font-bold text-xl mt-1">Official circuit</p><p class="text-slate-400 text-sm mt-2">Regional qualifiers, points system, partner creators, sponsored finals, belt-holder system, title defense format.</p></div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5"><p class="text-slate-400 text-sm">Year 3</p><p class="font-bold text-xl mt-1">Annual belt event</p><p class="text-slate-400 text-sm mt-2">World title fight, live rankings, creator gym ecosystem, champion cosmetics, yearly flagship finals.</p></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const kpis = [
+      { label: 'Launch Year', value: '2023', detail: 'Created around June 2023', tone: 'orange' },
+      { label: 'Total Visits', value: '1.286B+', detail: 'Public Roblox tracker estimate', tone: 'red' },
+      { label: 'Current CCU Band', value: '7K–13K', detail: 'Directional public operating range', tone: 'green' },
+      { label: 'Recorded Peak', value: '60.2K', detail: 'All-time public tracker marker', tone: 'orange' }
+    ];
+
+    const readiness = [
+      { label: '1v1 Rule Clarity', score: 92 },
+      { label: 'Spectator Legibility', score: 88 },
+      { label: 'Community Scale', score: 86 },
+      { label: 'Ranked Infrastructure', score: 78 },
+      { label: 'Official Esports Maturity', score: 44 }
+    ];
+
+    const competitors = [
+      {
+        name: 'Boxing Beta!',
+        type: 'boxing',
+        visits: '1.029B visits',
+        ccu: '6.9K current / 15.4K recent peak',
+        socials: 'Discord 92.5K members / X: Studio Koi Koi 912 followers',
+        threat: 90,
+        note: 'Highest direct threat. Stronger current activity than UBG on recent public peaks, very large favorite base, and authentic boxing-gym positioning.'
+      },
+      {
+        name: 'Boxing League',
+        type: 'boxing',
+        visits: '579.4M visits',
+        ccu: '229 current / 329 recent peak',
+        socials: 'Discord 23.0K members, 1.8K online / X: Kenami 14.9K followers',
+        threat: 56,
+        note: 'Historically important boxing benchmark with strong legacy reach, but current public activity is much lower than UBG and Boxing Beta.'
+      },
+      {
+        name: 'Shadow Boxing Battles',
+        type: 'boxing',
+        visits: '366M+',
+        ccu: 'Not tracked here',
+        socials: 'Community-led / not verified',
+        threat: 48,
+        note: 'More viral/social than traditional PvP boxing, but competes for boxing-themed attention.'
+      },
+      {
+        name: 'Shadow Boxing Fights',
+        type: 'boxing',
+        visits: 'Public page verified',
+        ccu: 'Not tracked here',
+        socials: 'Community-led / not verified',
+        threat: 42,
+        note: 'Relevant as casual boxing-adjacent content, not a direct esports competitor.'
+      },
+      {
+        name: 'Anime Battlegrounds',
+        type: 'combat',
+        visits: 'Category-level competitor',
+        ccu: 'Varies by title',
+        socials: 'Creator-led ecosystems',
+        threat: 74,
+        note: 'Competes for skilled PvP players, tier-list culture, and creator-led tournaments.'
+      },
+      {
+        name: 'Arena Fighters',
+        type: 'combat',
+        visits: 'Category-level competitor',
+        ccu: 'Varies by title',
+        socials: 'Creator-led ecosystems',
+        threat: 68,
+        note: 'Existing tournament behavior and meta literacy can pull attention from UBG.'
+      },
+      {
+        name: 'UGC Combat Experiences',
+        type: 'combat',
+        visits: 'Category-level competitor',
+        ccu: 'Varies by title',
+        socials: 'Discord + creator-led',
+        threat: 61,
+        note: 'Broader combat ecosystem competes for creators, Discord communities, and prize events.'
+      }
+    ];
+
+    const socials = [
+      {
+        channel: 'Roblox Page',
+        status: 'Verified',
+        metric1: '1.286B visits',
+        metric2: '1.234M favorites',
+        note: 'Primary game destination and player funnel.'
+      },
+      {
+        channel: 'Discord',
+        status: 'Verified',
+        metric1: '584,947 members',
+        metric2: '76,314 online',
+        note: 'Most important hub for events, brackets, disputes, and rankings.'
+      },
+      {
+        channel: 'X / Twitter',
+        status: 'Developer-linked',
+        metric1: '32,593 followers',
+        metric2: 'Official dev-linked channel',
+        note: 'Useful for update announcements and official competitive posts.'
+      },
+      {
+        channel: 'TikTok',
+        status: 'Community-led',
+        metric1: 'Official account not verified',
+        metric2: 'Creator ecosystem opportunity',
+        note: 'Likely strongest short-form discovery channel via clips and creators.'
+      },
+      {
+        channel: 'YouTube',
+        status: 'Creator-led',
+        metric1: 'Official channel not verified',
+        metric2: 'Strong creator coverage',
+        note: 'Meta guides, tier lists, ranked videos, and event recaps.'
+      },
+      {
+        channel: 'Instagram',
+        status: 'Unverified official',
+        metric1: 'Official account not verified',
+        metric2: 'Do not present a follower count yet',
+        note: 'Use carefully unless official ownership is confirmed.'
+      }
+    ];
+
+    const roadmap = [
+      { title: '1. Official Fight Nights', copy: 'Weekly creator/community events with clear rules, lightweight rewards, and Discord signups.' },
+      { title: '2. Monthly Ranked Cups', copy: 'Bracketed competition by region, with seeded players and creator-hosted broadcasts.' },
+      { title: '3. Regional Championships', copy: 'NA, SA, EU, and AS qualifiers connected to in-game matchmaking narratives.' },
+      { title: '4. Seasonal Finals', copy: 'Top ranked players enter a higher-production event with official streams and belt storytelling.' },
+      { title: '5. Yearly Belt Competition', copy: 'The long-term UFC-style annual championship with live rankings, storylines, and official titleholders.' }
+    ];
+
+    const combatSystems = [
+      { title: 'Health & Regeneration', copy: 'Health includes current, regenerable, and permanent damage. Regeneration varies by style, making pressure and recovery timing important.' },
+      { title: 'Stamina', copy: 'Most actions consume stamina. Attacking at 0% stamina creates a stamina-break stun window, discouraging button mashing.' },
+      { title: 'Light Punches / M1', copy: 'Fast pressure tool used to control neutral and build damage. Core rhythm of most exchanges.' },
+      { title: 'Heavy Punches / M2', copy: 'Slower, higher-impact attacks that create punishable highlight moments and big spectator swings.' },
+      { title: 'Ultimates', copy: 'Super-meter style attacks that can create comeback moments, but can be blocked, dodged, or punished.' },
+      { title: 'Blocking & Block Break', copy: 'Blocking reduces damage but can be broken, creating a stun window and discouraging pure defense.' },
+      { title: 'Dodging & Perfect Dodge', copy: 'Main skill-expression mechanic. Rewards timing, reads, matchup knowledge, and active play.' },
+      { title: 'Counters & Feints', copy: 'Counters punish predictable offense. Feints create mind games, bait dodges, and make high-level fights feel like boxing.' },
+      { title: 'Backdash Degradation', copy: 'Anti-stalling mechanic that weakens repeated passive backdashing and keeps fights moving forward.' }
+    ];
+
+    const rankedRows = [
+      { dimension: 'Purpose', casual: 'Quick fights, practice, friends, experimentation.', ranked: 'Competitive matchmaking and long-term status climb.' },
+      { dimension: 'Matchmaking', casual: 'More open and less rating-controlled.', ranked: 'Rating usually determines opponent quality.' },
+      { dimension: 'Rewards', casual: 'General progression and match rewards.', ranked: 'Cash, gloves, style spins, titles, and post-match reward chances.' },
+      { dimension: 'Pressure', casual: 'Lower social pressure.', ranked: 'Higher stakes because players fight for rank and champion fantasy.' },
+      { dimension: 'Esports use', casual: 'Best for open fight nights, creators, and community reach.', ranked: 'Best base for official ladders, qualifiers, and belt contention.' }
+    ];
+
+    const comparisonRows = [
+      { dimension: 'Core fantasy', ubg: 'Anime-inspired boxing combat, style mastery, ranked champion fantasy.', beta: 'More realistic boxing/gym/sparring fantasy.', league: 'Progression-heavy boxing game with classes, skills, stats, and training.' },
+      { dimension: 'Combat identity', ubg: 'Style-based matchups with ultimates, counters, feints, and distinct strengths/weaknesses.', beta: 'Boxing simulation, gym culture, dodges, ranked, gloves, and custom spaces.', league: 'Close-range fighting with skill moves, stamina, stats, and class progression.' },
+      { dimension: 'Progression', ubg: 'Fighting styles, ranked rating, titles, spins, gloves, cosmetics.', beta: 'Ranked system, gloves, gym identity, and community sparring.', league: 'Level classes, trainable stats, skills, gym training, gloves.' },
+      { dimension: 'Spectator appeal', ubg: 'High due to ultimates, visual style identity, counters, perfect dodges, and flashier effects.', beta: 'Strong for realistic boxing audiences, but potentially more sim-like.', league: 'Legacy appeal, but more complicated if stats/progression influence fairness.' },
+      { dimension: 'Esports fit', ubg: 'Best for combat-sports entertainment and standardized event formats.', beta: 'Best for boxing sim league and gym/sparring culture.', league: 'Useful benchmark for progression/training but less clean for fair competition.' }
+    ];
+
+    const esportsFriendly = [
+      '1v1 format is easy for brackets and title fights.',
+      'Health, stamina, dodges, blocks, and ultimates are readable to spectators.',
+      'Perfect dodges, counters, feints, and stamina create real skill expression.',
+      'Rank titles already map to World Champion / Unified Champion language.',
+      'Style meta fuels tier lists, mains, matchup debates, and creator content.',
+      'Anti-stalling systems help prevent overly passive tournament matches.'
+    ];
+
+    const riskCards = [
+      { risk: 'Style balance debates', fix: 'Lock tournament patch windows and publish allowed style/rules lists.' },
+      { risk: 'Rarity / spin perception', fix: 'Consider equalized accounts, style pools, or approved competitive loadouts for official events.' },
+      { risk: 'Ranked is not enough', fix: 'Add brackets, check-ins, admins, VOD review, dispute process, and moderation.' },
+      { risk: 'Spectator clarity', fix: 'Use overlays showing style, rank, record, stamina, ultimate, and recent form.' },
+      { risk: 'Toxicity and disputes', fix: 'Use a clear code of conduct, penalties, reporting system, and referee escalation.' }
+    ];
+
+    document.getElementById('kpiCards').innerHTML = kpis.map(k => `
+      <div class="glass rounded-3xl p-5 fade-in">
+        <p class="text-slate-400 text-sm">${k.label}</p>
+        <p class="text-3xl font-black mt-2">${k.value}</p>
+        <p class="text-slate-300 text-sm mt-2">${k.detail}</p>
+      </div>
+    `).join('');
+
+    document.getElementById('readinessBars').innerHTML = readiness.map(r => `
+      <div>
+        <div class="flex items-center justify-between text-sm mb-2">
+          <span class="text-slate-200">${r.label}</span>
+          <span class="text-slate-400">${r.score}/100</span>
+        </div>
+        <div class="bar-bg h-2 rounded-full overflow-hidden">
+          <div class="bar-fill h-full rounded-full" style="width:${r.score}%"></div>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('socialGrid').innerHTML = socials.map(s => `
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+        <div class="flex items-start justify-between gap-3">
+          <p class="font-bold text-[20px] leading-tight">${s.channel}</p>
+          <span class="text-xs rounded-full px-3 py-1 ${
+            s.status.includes('Verified')
+              ? 'bg-green-500/15 text-green-200'
+              : s.status.includes('Developer')
+              ? 'bg-orange-500/15 text-orange-200'
+              : 'bg-slate-500/15 text-slate-200'
+          }">${s.status}</span>
+        </div>
+        <div class="mt-4">
+          <p class="text-white font-black text-2xl leading-tight">${s.metric1}</p>
+          <p class="text-slate-400 text-sm mt-2">${s.metric2}</p>
+        </div>
+        <p class="text-slate-300 text-base leading-7 mt-4">${s.note}</p>
+      </div>
+    `).join('');
+
+    document.getElementById('roadmap').innerHTML = roadmap.map((r, i) => `
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+        <div class="h-9 w-9 rounded-full bg-orange-500/20 text-orange-200 flex items-center justify-center font-bold shrink-0">${i + 1}</div>
+        <div>
+          <p class="font-bold">${r.title}</p>
+          <p class="text-slate-400 text-sm mt-1">${r.copy}</p>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('combatSystems').innerHTML = combatSystems.map(item => `
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <p class="font-bold">${item.title}</p>
+        <p class="text-slate-400 text-sm mt-1">${item.copy}</p>
+      </div>
+    `).join('');
+
+    document.getElementById('rankedTable').innerHTML = rankedRows.map(r => `
+      <tr class="hover:bg-white/5 transition">
+        <td class="py-4 pr-4 font-bold">${r.dimension}</td>
+        <td class="py-4 pr-4 text-slate-300">${r.casual}</td>
+        <td class="py-4 pr-4 text-slate-300">${r.ranked}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('comparisonTable').innerHTML = comparisonRows.map(r => `
+      <tr class="hover:bg-white/5 transition">
+        <td class="py-4 pr-4 font-bold">${r.dimension}</td>
+        <td class="py-4 pr-4 text-slate-300">${r.ubg}</td>
+        <td class="py-4 pr-4 text-slate-300">${r.beta}</td>
+        <td class="py-4 pr-4 text-slate-300">${r.league}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('esportsFriendly').innerHTML = esportsFriendly.map((text, i) => `
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-3">
+        <div class="h-7 w-7 rounded-full bg-green-500/15 text-green-200 flex items-center justify-center font-bold shrink-0">${i + 1}</div>
+        <p class="text-slate-300 text-sm">${text}</p>
+      </div>
+    `).join('');
+
+    document.getElementById('riskCards').innerHTML = riskCards.map(item => `
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <p class="font-bold text-red-200">${item.risk}</p>
+        <p class="text-slate-400 text-sm mt-1">${item.fix}</p>
+      </div>
+    `).join('');
+
+    function renderCompetitors(filter = 'all') {
+      const rows = competitors.filter(c => filter === 'all' || c.type === filter);
+      document.getElementById('competitorTable').innerHTML = rows.map(c => `
+        <tr class="hover:bg-white/5 transition">
+          <td class="py-4 pr-4 font-bold">${c.name}</td>
+          <td class="py-4 pr-4 capitalize text-slate-300">${c.type === 'boxing' ? 'Direct boxing' : 'Combat attention'}</td>
+          <td class="py-4 pr-4 text-slate-300">${c.visits}</td>
+          <td class="py-4 pr-4 text-slate-300 max-w-[190px]">${c.ccu}</td>
+          <td class="py-4 pr-4 text-slate-300 max-w-[250px]">${c.socials}</td>
+          <td class="py-4 pr-4">
+            <div class="flex items-center gap-3">
+              <div class="bar-bg h-2 rounded-full overflow-hidden w-24">
+                <div class="bar-fill h-full" style="width:${c.threat}%"></div>
+              </div>
+              <span class="text-slate-400 text-sm">${c.threat}</span>
+            </div>
+          </td>
+          <td class="py-4 pr-4 text-slate-300 max-w-md">${c.note}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active-tab'));
+        document.querySelectorAll('.tab').forEach(b => b.classList.add('pill'));
+        btn.classList.add('active-tab');
+        btn.classList.remove('pill');
+        renderCompetitors(btn.dataset.filter);
+      });
+    });
+
+    document.querySelectorAll('.view-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-tab').forEach(b => {
+          b.classList.remove('active-view-tab');
+          b.classList.add('pill');
+        });
+        btn.classList.add('active-view-tab');
+        btn.classList.remove('pill');
+        document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
+        document.getElementById(btn.dataset.view).classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+
+    const ctx = document.getElementById('ccuChart');
+    let ccuChart;
+
+    const chartData = {
+      public: {
+        labels: ['Current', '24h Peak', '7d Peak', '30d Peak', 'All-time Peak'],
+        values: [7100, 11018, 12849, 12849, 60213]
+      },
+      strategy: {
+        labels: ['Lower Operating Band', 'Typical Current', 'Recent Peak', 'Major Spike Potential'],
+        values: [7000, 10000, 13000, 60000]
+      }
+    };
+
+    function makeChart(mode) {
+      if (ccuChart) ccuChart.destroy();
+      ccuChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: chartData[mode].labels,
+          datasets: [{
+            label: 'Concurrent Players',
+            data: chartData[mode].values,
+            borderWidth: 0,
+            borderRadius: 14,
+            backgroundColor: chartData[mode].values.map((_, i) => i === chartData[mode].values.length - 1 ? 'rgba(239,68,68,.85)' : 'rgba(249,115,22,.82)')
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.raw.toLocaleString()} players`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#CBD5E1' }, grid: { display: false } },
+            y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,.08)' } }
+          }
+        }
+      });
+    }
+
+    document.getElementById('ccuMode').addEventListener('change', e => makeChart(e.target.value));
+
+    renderCompetitors();
+    makeChart('public');
+  </script>
+</body>
+</html>
